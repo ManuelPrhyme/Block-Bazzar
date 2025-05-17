@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { useMarketplace } from '../contexts/MarketplaceContext';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
-import {MARKETPLACE_ABI,MARKETPLACE_CONTRACT} from '../../contracts/ContractConfig'
+import {MARKETPLACE_ABI,MARKETPLACE_CONTRACT,USDC_ABI,USDC_ADDRESS} from '../../contracts/ContractConfig'
 import {ethers, parseEther,parseUnits} from 'ethers'
 import { Eip1193Provider } from 'ethers';
-
 
 const CheckoutPage = () => {
   const { account, connectWallet } = useWallet();
@@ -23,7 +22,6 @@ const CheckoutPage = () => {
     phoneNumber: '',
   });
   
-
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [transactionHash, setTransactionHash] = useState('');
   
@@ -36,53 +34,45 @@ const CheckoutPage = () => {
     setShippingAddress((prev) => ({ ...prev, [name]: value }));
   };
   
+
   const handleSubmit = async (e: React.FormEvent) => {
 
         e.preventDefault();
         setPaymentStatus('processing');
 
+  try {
     const Provider = new ethers.BrowserProvider(window.ethereum as Eip1193Provider);
     const Signer = await Provider.getSigner()
+    
+     const USDC_Authorize = new ethers.Contract(USDC_ADDRESS,USDC_ABI,Signer)
+     const Authorize = await USDC_Authorize.approve(MARKETPLACE_CONTRACT,parseUnits(`${finalPrice}`,18))
+     const AuthReceipt = await Authorize.wait()
+     console.log(AuthReceipt.hash);
+
     const Marketplace_Contract = new ethers.Contract(MARKETPLACE_CONTRACT,MARKETPLACE_ABI,Signer)
 
-    // function placeOrder(
-    //     uint256[] _productIds, 
-    //     uint256 _quantity, 
-    //     string calldata _shippingDetails
-
-      const shipAddress = `Name -> ${shippingAddress.fullName} || Phone -> ${shippingAddress.phoneNumber} || 
+      const shipDetails = `Name -> ${shippingAddress.fullName} || Phone -> ${shippingAddress.phoneNumber} || 
       Street -> ${shippingAddress.streetAddress} || City -> ${shippingAddress.city} || Parish -> ${shippingAddress.parish} || 
       Division -> ${shippingAddress.division} || Region -> ${shippingAddress.division} `
 
-    // const Complete_Purchase = await Marketplace_Contract.placeOrder(,,shipAddress)
+    const Complete_Purchase = await Marketplace_Contract.placeOrder(shipDetails,parseUnits(`${finalPrice}`,18))
 
-    // const Receipt = await Complete_Purchase.wait()
+    const Receipt = await Complete_Purchase.wait()
 
-    // console.log('The marketplace contract is:',Marketplace_Contract)
+    console.log('........',Receipt.hash)
 
-    // Simulate blockchain transaction
-    setPaymentStatus('processing');
-    
-    try {
-      // Simulate transaction delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      setTransactionHash(Receipt.hash);
+      setPaymentStatus('success');
       
-      // Simulate successful transaction
-      const mockTxHash = '0x' + Array(64).fill(0).map(() => 
-        Math.floor(Math.random() * 16).toString(16)).join('');
-      
-      setTransactionHash(mockTxHash);
-      setPaymentStatus('error');
-      
-      // Clear cart after successful purchase
       setTimeout(() => {
         clearCart();
-      }, 5000);
+      }, 3000);
     } catch (error) {
       console.error('Transaction failed:', error);
       setPaymentStatus('error');
     }
   };
+
   
   if (!account) {
     return (
