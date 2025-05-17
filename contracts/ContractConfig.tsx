@@ -1,5 +1,5 @@
 
-export const MARKETPLACE_CONTRACT = '0x94172444dB7d0d2B9D2e9060846e77b6A6bF55A5'
+export const MARKETPLACE_CONTRACT = '0xB2d41d3e27B80cE56b84f0CdfBE7A81b5f914D8a'
 
 export const MARKETPLACE_ABI = [
 	{
@@ -232,4 +232,4 @@ export const USDC_ABI = [
   "function approve(address spender, uint256 amount) public returns (bool)"
 ];
 
-export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+export const USDC_ADDRESS = '0x9C868614ffca7da36B36330b1f317B117c7834dE'
